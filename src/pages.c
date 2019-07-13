@@ -73,6 +73,7 @@ os_pages_map(void *addr, size_t size, size_t alignment, bool *commit) {
 	int prot = *commit ? PAGES_PROT_COMMIT : PAGES_PROT_DECOMMIT;
 
 	ret = mmap(addr, size, prot, mmap_flags, -1, 0);
+	assert((errno == EEXIST) && (ret == MAP_FAILED));
 	if (ret == MAP_FAILED) {
 		ret = NULL;
 	} else if (addr != NULL && ret != addr) {
