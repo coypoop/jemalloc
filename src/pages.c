@@ -190,12 +190,13 @@ pages_map(void *addr, size_t size, size_t alignment, bool *commit) {
 		int prot = *commit ? PAGES_PROT_COMMIT : PAGES_PROT_DECOMMIT;
 		int flags = mmap_flags;
 
-#if defined(MAP_EXCL)
-		/* can avoid touching existing mappings, FreeBSD */
 		if (addr != NULL) {
+#if defined(MAP_EXCL)
 			flags |= MAP_FIXED | MAP_EXCL;
-		} else
+#elif defined(MAP_TRYFIXED)
+			flags |= MAP_TRYFIXED;
 #endif
+		} else
 		{
 			unsigned alignment_bits = ffs_zu(alignment);
 			assert(alignment_bits > 1);
@@ -206,7 +207,7 @@ pages_map(void *addr, size_t size, size_t alignment, bool *commit) {
 		if (ret == MAP_FAILED) {
 			ret = NULL;
 		}
-#if !defined(MAP_EXCL)
+#if defined(MAP_TRYFIXED)
 		else if (addr != NULL && ret != addr) {
 			/*
 			 * We succeeded in mapping memory, but not in the right place.
