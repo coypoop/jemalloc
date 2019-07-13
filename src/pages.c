@@ -69,17 +69,10 @@ os_pages_map(void *addr, size_t size, size_t alignment, bool *commit) {
 	ret = VirtualAlloc(addr, size, MEM_RESERVE | (*commit ? MEM_COMMIT : 0),
 	    PAGE_READWRITE);
 #else
-	/*
-	 * We don't use MAP_FIXED here, because it can cause the *replacement*
-	 * of existing mappings, and we only want to create new mappings.
-	 */
-	{
-		int prot = *commit ? PAGES_PROT_COMMIT : PAGES_PROT_DECOMMIT;
 
-		ret = mmap(addr, size, prot, mmap_flags, -1, 0);
-	}
-	assert(ret != NULL);
+	int prot = *commit ? PAGES_PROT_COMMIT : PAGES_PROT_DECOMMIT;
 
+	ret = mmap(addr, size, prot, mmap_flags, -1, 0);
 	if (ret == MAP_FAILED) {
 		ret = NULL;
 	} else if (addr != NULL && ret != addr) {
