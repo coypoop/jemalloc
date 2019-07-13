@@ -637,9 +637,9 @@ pages_boot(void) {
 
 	init_thp_state();
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__NetBSD__)
 	/*
-	 * FreeBSD doesn't need the check; madvise(2) is known to work.
+	 * Don't need to check; madvise(2) is known to work.
 	 */
 #else
 	/* Detect lazy purge runtime support. */
