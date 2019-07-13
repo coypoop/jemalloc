@@ -609,6 +609,15 @@ pages_boot(void) {
 #ifndef _WIN32
 	mmap_flags = MAP_PRIVATE | MAP_ANON;
 #endif
+#ifdef MAP_TRYFIXED
+	mmap_flags |= MAP_TRYFIXED;
+#endif
+#ifdef MAP_EXCL
+	mmap_flags |= MAP_EXCL | MAP_FIXED;
+#endif
+#ifdef MAP_FIXED_NOREPLACE
+	mmap_flags |= MAP_FIXED_NOREPLACE;
+#endif
 
 #ifdef JEMALLOC_SYSCTL_VM_OVERCOMMIT
 	os_overcommits = os_overcommits_sysctl();
