@@ -180,11 +180,8 @@ pages_map(void *addr, size_t size, size_t alignment, bool *commit) {
 	assert(alignment >= PAGE);
 	assert(ALIGNMENT_ADDR2BASE(addr, alignment) == addr);
 
-#if defined(__FreeBSD__) && defined(MAP_EXCL)
-	/*
-	 * FreeBSD has mechanisms both to mmap at specific address without
-	 * touching existing mappings, and to mmap with specific alignment.
-	 */
+#if defined(MAP_ALIGNED)
+	/* can mmap with specific alignment, FreeBSD/NetBSD */
 	{
 		if (os_overcommits) {
 			*commit = true;
@@ -193,9 +190,13 @@ pages_map(void *addr, size_t size, size_t alignment, bool *commit) {
 		int prot = *commit ? PAGES_PROT_COMMIT : PAGES_PROT_DECOMMIT;
 		int flags = mmap_flags;
 
+#if defined(MAP_EXCL)
+		/* can avoid touching existing mappings, FreeBSD */
 		if (addr != NULL) {
 			flags |= MAP_FIXED | MAP_EXCL;
-		} else {
+		} else
+#endif
+		{
 			unsigned alignment_bits = ffs_zu(alignment);
 			assert(alignment_bits > 1);
 			flags |= MAP_ALIGNED(alignment_bits - 1);
@@ -205,6 +206,15 @@ pages_map(void *addr, size_t size, size_t alignment, bool *commit) {
 		if (ret == MAP_FAILED) {
 			ret = NULL;
 		}
+#if !defined(MAP_EXCL)
+		else if (addr != NULL && ret != addr) {
+			/*
+			 * We succeeded in mapping memory, but not in the right place.
+			 */
+			os_pages_unmap(ret, size);
+			ret = NULL;
+		}
+#endif
 
 		return ret;
 	}
